@@ -4,14 +4,9 @@ using TowerFall;
 
 namespace Warlord;
 
-public class ExampleModSettings : ModuleSettings 
+public class WarlordSettings : ModuleSettings 
 {
     [SettingsName("Time to score!")]
     [SettingsNumber(5, 30, 1)]
-    public int TimeToScore = 15;
-}
-
-public static class CommandList 
-{
-   
+    public int TimeToScore = 10;
 }

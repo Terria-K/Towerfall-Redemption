@@ -4,11 +4,26 @@ using Microsoft.Xna.Framework;
 using Monocle;
 using TowerFall;
 using FortRise;
-using System.Security.Policy;
 
 namespace Warlord;
-[CustomRoundLogic("WarlordMode")]
-public class TowerBallRoundLogic : CustomVersusRoundLogic
+
+public class Warlord : CustomGameMode
+{
+    public override RoundLogic CreateRoundLogic(Session session)
+    {
+        return new WarlordRoundLogic(session);
+    }
+
+    public override void Initialize()
+    {
+        Icon = TFGame.MenuAtlas["gameModes/warlord"];
+        NameColor = Color.Red;
+    }
+
+    public override void InitializeSounds() {}
+}
+
+public class WarlordRoundLogic : RoundLogic
 {
 	public Vector2 helmPos;
 
@@ -20,23 +35,13 @@ public class TowerBallRoundLogic : CustomVersusRoundLogic
 
 	public int lastThrower;
 
-    public TowerBallRoundLogic(Session session)
+    public WarlordRoundLogic(Session session)
 		: base(session, false)
 	{
 		CanMiasma = false;
 		arrowQueue = new List<Arrow>();
         this.endDelay = new Counter();
         this.endDelay.Set(90);
-    }
-
-    public static RoundLogicInfo Create()
-    {
-        return new RoundLogicInfo
-        {
-            Name = "Warlord",
-            Icon = ExampleModModule.Atlas["gameModes/warlord"],
-            RoundType = RoundLogicType.FFA
-        };
     }
 
     public override void OnLevelLoadFinish()
@@ -100,17 +105,45 @@ public class TowerBallRoundLogic : CustomVersusRoundLogic
             }
             if (MyPlayer.HasWarlordHelm[playerIndex] > 0 && killerIndex != playerIndex && killerIndex >= 0)
             { 
-                base.Session.Scores[killerIndex]++;
+                AddScore(killerIndex, 1);
+                this.Session.CurrentLevel.Add<FloatText>(
+                    new FloatText(player.Position + new Vector2(0f, -8f), "+1 POINT", 
+                    ArcherData.GetColorA(killerIndex), Color.Yellow, 1f, 1f, true));
+
+                int winnerIndex = Session.GetWinner();
+                if (winnerIndex != -1)
+                {
+                    FinalKill(corpse, winnerIndex);
+                }
+                else 
+                {
+                    FinalKillNoSpotlightOrMusicStop();
+                }
             }
             else if (MyPlayer.HasWarlordHelm[WinPlayerIndex] > 0)
             {
-                base.Session.Scores[WinPlayerIndex]++;
+                AddScore(WinPlayerIndex, 1);
+                this.Session.CurrentLevel.Add<FloatText>(
+                    new FloatText(player.Position + new Vector2(0f, -8f), "+1 POINT", 
+                    ArcherData.GetColorA(WinPlayerIndex), Color.Yellow, 1f, 1f, true));
+
+                int winnerIndex = Session.GetWinner();
+                if (winnerIndex != -1)
+                {
+                    Session.CurrentLevel.Ending = true;
+                    FinalKill(corpse, winnerIndex);
+                }
+                else 
+                {
+                    FinalKillNoSpotlightOrMusicStop();
+                }
             }
         }
     }
+
     public void DropHelm(Player player, Vector2 position, Facing Facing)
 	{
-        Entity helm = new WarlordHelm(position,Facing.ToString() == "Left", null, 0);
+        Entity helm = new WarlordHelm(position, Facing == Facing.Left, null, 0);
         Session.CurrentLevel.Add(helm);
 	}
     public override void OnRoundStart()
@@ -122,8 +155,25 @@ public class TowerBallRoundLogic : CustomVersusRoundLogic
     {
         if (Session.CurrentLevel.Ending == false)
         {
-            base.Session.Scores[player.PlayerIndex]++;
-            Session.CurrentLevel.Ending = true;
+            AddScore(player.PlayerIndex, 1);
+            int winnerIndex = Session.GetWinner();
+            if (winnerIndex != -1)
+            {
+                FinalKillNoCorpse(winnerIndex);
+                Session.CurrentLevel.Ending = true;
+            }
         }
+    }
+
+    private void FinalKillNoCorpse(int otherSpotlightIndex)
+    {
+        Session.MatchStats[otherSpotlightIndex].GotWin = true;
+        if (Session.CurrentLevel.CanEnd)
+        {
+            LevelEntity playerOrCorpse = Session.CurrentLevel.GetPlayerOrCorpse(otherSpotlightIndex);
+            Session.CurrentLevel.LightingLayer.SetSpotlight(playerOrCorpse);
+        }
+
+        FinalKillNoSpotlight();
     }
 }

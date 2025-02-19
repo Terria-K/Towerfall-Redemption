@@ -31,7 +31,7 @@ namespace Warlord
         public WarlordHelm(Vector2 position, bool flipped, Arrow arrow, int ownerIndex) : base(position)
         {
             Position = position;
-            image = new Image(ExampleModModule.Atlas["warlord/helmNoPlayer"]);
+            image = new Image(TFGame.Atlas["Warlord/player/helmNoPlayer"]);
             image.CenterOrigin();
             image.FlipX = flipped;
             Add(image);

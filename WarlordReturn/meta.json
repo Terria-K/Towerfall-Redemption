@@ -3,5 +3,11 @@
 	"version": "1.0.0",
 	"author": "CoolModder",
 	"description": "What Warlord could of been.",
-	"dll": "Warlord.dll"
+	"dll": "Warlord.dll",
+	"dependencies": [
+		{
+			"name": "FortRise",
+			"version": "5.0.0"
+		}
+	]
 }
